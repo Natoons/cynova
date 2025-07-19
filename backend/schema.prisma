@@ -1,64 +1,78 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mongodb"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
 model Produit {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  id            String   @id @default(cuid())
   nom           String
   description   String
-  ingredientIds String[] @default([])
-  bienfaits     String[]
-  quantiteIds   String[] @default([])
-  yukaScore     Int?
-  provenance    String?
-  stock         Int
-  blogIds       String[] @default([])
+  prix          Float
+  categorie     String   // shampoing, savon, crème, huile, etc.
+  ingredientIds String   @default("[]") // JSON string des IDs d'ingrédients
+  bienfaits     String   @default("[]") // JSON string des bienfaits
+  quantiteIds   String   @default("[]") // JSON string des IDs de quantités
+  yukaScore     Int?     // Score Yuka (0-100)
+  provenance    String?  // Pays d'origine des ingrédients
+  stock         Int      @default(0)
+  blogIds       String   @default("[]") // JSON string des IDs de blogs
+  imageUrl      String?  // URL de l'image du produit
+  actif         Boolean  @default(true) // Produit disponible ou non
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
 
 model Ingredient {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(cuid())
   nom         String
-  origine     String?
-  produitId   String?   @db.ObjectId
+  origine     String?  // Pays d'origine
+  description String?  // Description des bienfaits
+  bio         Boolean  @default(false) // Ingrédient bio ou non
+  allergene   Boolean  @default(false) // Allergène potentiel
+  produitId   String?  // ID du produit associé
 }
 
 model Quantite {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  ingredient  String
-  valeur      Float
-  unite       String
-  produitId   String?   @db.ObjectId
+  id          String   @id @default(cuid())
+  ingredient  String   // Nom de l'ingrédient
+  valeur      Float    // Quantité
+  unite       String   // ml, g, %, etc.
+  produitId   String?  // ID du produit associé
 }
 
 model Blog {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String   @id @default(cuid())
   titre       String
   contenu     String
-  categorie   String
-  produitIds  String[] // IDs des produits liés
+  categorie   String   // ingrédients, conseils, DIY, santé
+  auteur      String   @default("Équipe Cynova")
+  imageUrl    String?  // Image d'illustration
+  produitIds  String   @default("[]") // JSON string des IDs de produits liés
+  tags        String   @default("[]") // JSON string des tags
+  publie      Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
 model Utilisateur {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  email       String  @unique
+  id          String   @id @default(cuid())
+  email       String   @unique
   motDePasse  String
-  role        Role    @default(USER)
+  nom         String?
+  prenom      String?
+  role        Role     @default(USER)
+  adresse     String?
+  telephone   String?
+  newsletter  Boolean  @default(false)
   createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 enum Role {

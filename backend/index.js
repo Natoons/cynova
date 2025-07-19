@@ -1,63 +1,113 @@
 const express = require('express');
 const cors = require('cors');
-const { PrismaClient } = require('@prisma/client');
+const helmet = require('helmet');
+const compression = require('compression');
+const morgan = require('morgan');
 require('dotenv').config();
 
+// Import des routes et middleware
+const produitRoutes = require('./routes/produitRoutes');
+const errorHandler = require('./middleware/errorHandler');
+
 const app = express();
-const prisma = new PrismaClient();
 
-app.use(cors());
-app.use(express.json());
+// Middleware de sécurité
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+    },
+  },
+  crossOriginEmbedderPolicy: false,
+}));
 
-// GET tous les produits
-app.get('/api/produits', async (req, res) => {
-  const produits = await prisma.produit.findMany();
-  res.json(produits);
+// Middleware de compression
+app.use(compression());
+
+// Middleware de logging
+app.use(morgan('combined'));
+
+// Middleware CORS
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Middleware pour parser le JSON
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Routes de base
+app.get('/', (req, res) => {
+  res.json({
+    message: '🚀 API Cynova - Cosmétiques Maison',
+    version: '1.0.0',
+    status: 'online',
+    timestamp: new Date().toISOString(),
+    endpoints: {
+      produits: '/api/produits',
+      docs: '/api/docs'
+    }
+  });
 });
 
-// GET un produit par ID
-app.get('/api/produits/:id', async (req, res) => {
-  const { id } = req.params;
-  const produit = await prisma.produit.findUnique({ where: { id } });
-  if (!produit) return res.status(404).json({ error: 'Produit non trouvé' });
-  res.json(produit);
+// Route de santé
+app.get('/health', (req, res) => {
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
-// POST créer un produit
-app.post('/api/produits', async (req, res) => {
-  try {
-    const data = req.body;
-    const produit = await prisma.produit.create({ data });
-    res.status(201).json(produit);
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+// Routes API
+app.use('/api/produits', produitRoutes);
+
+// Middleware pour routes non trouvées
+app.use('*', (req, res) => {
+  res.status(404).json({
+    error: 'Route non trouvée',
+    message: `La route ${req.originalUrl} n'existe pas`,
+    availableRoutes: [
+      'GET /',
+      'GET /health',
+      'GET /api/produits',
+      'POST /api/produits',
+      'GET /api/produits/:id',
+      'PUT /api/produits/:id',
+      'DELETE /api/produits/:id',
+      'GET /api/produits/search'
+    ]
+  });
 });
 
-// PUT modifier un produit
-app.put('/api/produits/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    const data = req.body;
-    const produit = await prisma.produit.update({ where: { id }, data });
-    res.json(produit);
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+// Middleware de gestion d'erreurs (doit être en dernier)
+app.use(errorHandler);
+
+// Gestion des erreurs non capturées
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-// DELETE supprimer un produit
-app.delete('/api/produits/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    await prisma.produit.delete({ where: { id } });
-    res.json({ message: 'Produit supprimé' });
-  } catch (e) {
-    res.status(400).json({ error: e.message });
-  }
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
 });
 
 const PORT = process.env.PORT || 4000;
+
 app.listen(PORT, () => {
-  console.log(`Backend API running on http://localhost:${PORT}`);
+  console.log(`🚀 API Cynova running on http://localhost:${PORT}`);
+  console.log(`📦 Base de données: SQLite`);
+  console.log(`🔧 Environnement: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🛡️  Sécurité: Helmet, CORS, Rate Limiting`);
+  console.log(`⚡ Performance: Compression, Morgan logging`);
+  console.log(`📊 Monitoring: Health check disponible sur /health`);
 }); 
