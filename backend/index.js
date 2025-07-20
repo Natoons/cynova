@@ -7,6 +7,9 @@ require('dotenv').config();
 
 // Import des routes et middleware
 const produitRoutes = require('./routes/produitRoutes');
+const blogRoutes = require('./routes/blogRoutes');
+const utilisateurRoutes = require('./routes/utilisateurRoutes');
+const ingredientRoutes = require('./routes/ingredientRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 const app = express();
@@ -51,6 +54,9 @@ app.get('/', (req, res) => {
     timestamp: new Date().toISOString(),
     endpoints: {
       produits: '/api/produits',
+      blogs: '/api/blogs',
+      utilisateurs: '/api/utilisateurs',
+      ingredients: '/api/ingredients',
       docs: '/api/docs'
     }
   });
@@ -69,6 +75,9 @@ app.get('/health', (req, res) => {
 
 // Routes API
 app.use('/api/produits', produitRoutes);
+app.use('/api/blogs', blogRoutes);
+app.use('/api/utilisateurs', utilisateurRoutes);
+app.use('/api/ingredients', ingredientRoutes);
 
 // Middleware pour routes non trouvées
 app.use('*', (req, res) => {
@@ -83,7 +92,25 @@ app.use('*', (req, res) => {
       'GET /api/produits/:id',
       'PUT /api/produits/:id',
       'DELETE /api/produits/:id',
-      'GET /api/produits/search'
+      'GET /api/produits/search',
+      'GET /api/blogs',
+      'POST /api/blogs',
+      'GET /api/blogs/:id',
+      'PUT /api/blogs/:id',
+      'DELETE /api/blogs/:id',
+      'GET /api/blogs/search',
+      'GET /api/utilisateurs',
+      'POST /api/utilisateurs',
+      'POST /api/utilisateurs/login',
+      'GET /api/utilisateurs/:id',
+      'PUT /api/utilisateurs/:id',
+      'DELETE /api/utilisateurs/:id',
+      'GET /api/ingredients',
+      'POST /api/ingredients',
+      'GET /api/ingredients/:id',
+      'PUT /api/ingredients/:id',
+      'DELETE /api/ingredients/:id',
+      'GET /api/ingredients/search'
     ]
   });
 });
@@ -110,4 +137,5 @@ app.listen(PORT, () => {
   console.log(`🛡️  Sécurité: Helmet, CORS, Rate Limiting`);
   console.log(`⚡ Performance: Compression, Morgan logging`);
   console.log(`📊 Monitoring: Health check disponible sur /health`);
+  console.log(`📚 Endpoints: Produits, Blogs, Utilisateurs, Ingrédients`);
 }); 
